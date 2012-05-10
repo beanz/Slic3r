@@ -47,9 +47,6 @@ sub BUILD {
             @$facet[1..3] = (@$facet[$z_order[0]..3], @$facet[1..($z_order[0]-1)]);
         }
         
-        # ignore the normal if provided
-        my @vertices = @$facet[-3..-1];
-        
         foreach my $edge ($self->_facet_edges($facet_id)) {
             my $edge_coordinates = join ';', sort @$edge;
             my $edge_id = $table{$edge_coordinates};
