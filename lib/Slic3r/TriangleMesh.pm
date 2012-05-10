@@ -43,7 +43,11 @@ sub BUILD {
         # this is needed to get all intersection lines in a consistent order
         # (external on the right of the line)
         {
-            my @z_order = sort { $self->vertices->[$facet->[$a]][Z] <=> $self->vertices->[$facet->[$b]][Z] } 1..3;
+          my @z_order = ($self->vertices->[$facet->[1]][Z] <= $self->vertices->[$facet->[2]][Z] &&
+                         $self->vertices->[$facet->[1]][Z] <= $self->vertices->[$facet->[3]][Z]) ?
+                           (1,2,3) :
+                             ($self->vertices->[$facet->[2]][Z] <= $self->vertices->[$facet->[3]][Z]) ?
+                               (2,1,3) : (3,1,2);
             @$facet[1..3] = (@$facet[$z_order[0]..3], @$facet[1..($z_order[0]-1)]);
         }
         
