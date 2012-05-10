@@ -178,12 +178,8 @@ sub make_loops {
     @lines = grep $_, @lines;
     
     # count relationships
-    my %prev_count = ();  # how many lines have the same prev_facet_index
     my %a_count    = ();  # how many lines have the same a_id
     foreach my $line (@lines) {
-        if (defined $line->[I_PREV_FACET_INDEX]) {
-            $prev_count{$line->[I_PREV_FACET_INDEX]}++;
-        }
         if (defined $line->[I_A_ID]) {
             $a_count{$line->[I_A_ID]}++;
         }
