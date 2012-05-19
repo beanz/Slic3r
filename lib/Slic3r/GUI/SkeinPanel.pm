@@ -5,6 +5,7 @@ use utf8;
 
 use File::Basename qw(basename dirname);
 use Slic3r::Geometry qw(X Y);
+use Slic3r::Notifier qw(notify);
 use Wx qw(:sizer :progressdialog wxOK wxICON_INFORMATION wxICON_WARNING wxICON_ERROR wxICON_QUESTION
     wxOK wxCANCEL wxID_OK wxFD_OPEN wxFD_SAVE wxDEFAULT wxNORMAL);
 use Wx::Event qw(EVT_BUTTON);
@@ -78,14 +79,6 @@ sub new {
     );
     $self->{panels} = \%panels;
 
-    if (eval "use Growl::GNTP; 1") {
-        # register growl notifications
-        eval {
-            $self->{growler} = Growl::GNTP->new(AppName => 'Slic3r', AppIcon => "$FindBin::Bin/var/Slic3r.png");
-            $self->{growler}->register([{Name => 'SKEIN_DONE', DisplayName => 'Slicing Done'}]);
-        };
-    }
-    
     my $tabpanel = Wx::Notebook->new($self, -1, Wx::wxDefaultPosition, Wx::wxDefaultSize, &Wx::wxNB_TOP);
     my $make_tab = sub {
         my @cols = @_;
@@ -260,10 +253,7 @@ sub do_slice {
             $print->processing_time - int($print->processing_time/60)*60
                 if $print->processing_time;
         $message .= ".";
-        eval {
-            $self->{growler}->notify(Event => 'SKEIN_DONE', Title => 'Slicing Done!', Message => $message)
-                if ($self->{growler});
-        };
+        notify('Slicing Done!', $message);
         Wx::MessageDialog->new($self, $message, 'Done!', 
             wxOK | wxICON_INFORMATION)->ShowModal;
     };

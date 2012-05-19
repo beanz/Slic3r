@@ -9,6 +9,7 @@ use File::Basename qw(basename dirname);
 use Math::ConvexHull qw(convex_hull);
 use Slic3r::Geometry qw(X Y Z X1 Y1 X2 Y2 scale unscale);
 use Slic3r::Geometry::Clipper qw(JT_ROUND);
+use Slic3r::Notifier qw(notify);
 use Wx qw(:sizer :progressdialog wxOK wxICON_INFORMATION wxICON_WARNING wxICON_ERROR wxICON_QUESTION
     wxOK wxCANCEL wxID_OK wxFD_OPEN wxFD_SAVE wxDEFAULT wxNORMAL);
 use Wx::Event qw(EVT_BUTTON EVT_PAINT EVT_MOUSE_EVENTS EVT_LIST_ITEM_SELECTED EVT_LIST_ITEM_DESELECTED
@@ -506,11 +507,7 @@ sub export_gcode2 {
             $print->processing_time - int($print->processing_time/60)*60
                 if $print->processing_time;
         $message .= ".";
-        eval {
-            # TODO: fix it as we don't have $self->{growler}
-            $self->{growler}->notify(Event => 'SKEIN_DONE', Title => 'Slicing Done!', Message => $message)
-                if ($self->{growler});
-        };
+        notify('Slicing Done!', $message);
         $params{on_completed}->($message);
         $print->cleanup;
     };
