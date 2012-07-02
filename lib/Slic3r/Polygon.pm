@@ -6,8 +6,10 @@ use warnings;
 use parent 'Slic3r::Polyline';
 
 use Slic3r::Geometry qw(polygon_lines polygon_remove_parallel_continuous_edges
-    scale polygon_remove_acute_vertices polygon_segment_having_point point_in_polygon);
+    scale polygon_remove_acute_vertices polygon_segment_having_point);
 use Slic3r::Geometry::Clipper qw(JT_MITER);
+
+use Boost::Geometry::Utils qw(polygon point point_in_polygon);
 
 sub lines {
     my $self = shift;
@@ -56,7 +58,7 @@ sub point_on_segment {
 sub encloses_point {
     my $self = shift;
     my ($point) = @_;
-    return point_in_polygon($point, $self);
+    return point_in_polygon(point($point), polygon($self));
 }
 
 sub area {
