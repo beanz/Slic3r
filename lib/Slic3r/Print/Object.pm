@@ -180,8 +180,8 @@ sub make_perimeters {
             # compute polygons representing the thickness of the first external perimeter of
             # the upper layer slices
             my $upper = diff_ex(
-                [ map @$_, map $_->expolygon->offset_ex(+ 0.5 * scale $layer->perimeters_flow->spacing), @{$upper_layer->slices} ],
-                [ map @$_, map $_->expolygon->offset_ex(- scale($overlap) + (0.5 * scale $layer->perimeters_flow->spacing)), @{$upper_layer->slices} ],
+                [ map $_->polygons, map $_->expolygon->offset_ex(+ 0.5 * scale $layer->perimeters_flow->spacing), @{$upper_layer->slices} ],
+                [ map $_->polygons, map $_->expolygon->offset_ex(- scale($overlap) + (0.5 * scale $layer->perimeters_flow->spacing)), @{$upper_layer->slices} ],
             );
             next if !@$upper;
             
@@ -190,10 +190,10 @@ sub make_perimeters {
             my $ignore = [];
             {
                 my $diff = diff_ex(
-                    [ map @$_, map $_->expolygon->offset_ex(- ($Slic3r::perimeters-0.5) * scale $layer->perimeters_flow->spacing), @{$layer->slices} ],
-                    [ map @{$_->expolygon}, @{$upper_layer->slices} ],
+                    [ map $_->polygons, map $_->expolygon->offset_ex(- ($Slic3r::perimeters-0.5) * scale $layer->perimeters_flow->spacing), @{$layer->slices} ],
+                    [ map $_->expolygon->polygons, @{$upper_layer->slices} ],
                 );
-                $ignore = [ map @$_, map $_->offset_ex(scale $layer->perimeters_flow->spacing), @$diff ];
+                $ignore = [ map $_->polygons, map $_->offset_ex(scale $layer->perimeters_flow->spacing), @$diff ];
             }
             
             foreach my $slice (@{$layer->slices}) {
@@ -203,17 +203,17 @@ sub make_perimeters {
                     # of our slice
                     my $hypothetical_perimeter;
                     {
-                        my $outer = [ map @$_, $slice->expolygon->offset_ex(- ($hypothetical_perimeter_num-1.5) * scale $layer->perimeters_flow->spacing) ];
+                        my $outer = [ map $_->polygons, $slice->expolygon->offset_ex(- ($hypothetical_perimeter_num-1.5) * scale $layer->perimeters_flow->spacing) ];
                         last CYCLE if !@$outer;
-                        my $inner = [ map @$_, $slice->expolygon->offset_ex(- ($hypothetical_perimeter_num-0.5) * scale $layer->perimeters_flow->spacing) ];
+                        my $inner = [ map $_->polygons, $slice->expolygon->offset_ex(- ($hypothetical_perimeter_num-0.5) * scale $layer->perimeters_flow->spacing) ];
                         last CYCLE if !@$inner;
                         $hypothetical_perimeter = diff_ex($outer, $inner);
                     }
                     last CYCLE if !@$hypothetical_perimeter;
                     
                     
-                    my $intersection = intersection_ex([ map @$_, @$upper ], [ map @$_, @$hypothetical_perimeter ]);
-                    $intersection = diff_ex([ map @$_, @$intersection ], $ignore) if @$ignore;
+                    my $intersection = intersection_ex([ map $_->polygons, @$upper ], [ map $_->polygons, @$hypothetical_perimeter ]);
+                    $intersection = diff_ex([ map $_->polygons, @$intersection ], $ignore) if @$ignore;
                     last CYCLE if !@{ $intersection };
                     Slic3r::debugf "  adding one more perimeter at layer %d\n", $layer_id;
                     $slice->additional_inner_perimeters(($slice->additional_inner_perimeters || 0) + 1);
@@ -234,8 +234,8 @@ sub detect_surfaces_type {
     my $surface_difference = sub {
         my ($subject_surfaces, $clip_surfaces, $result_type, $layer) = @_;
         my $expolygons = diff_ex(
-            [ map { ref $_ eq 'ARRAY' ? $_ : ref $_ eq 'Slic3r::ExPolygon' ? @$_ : $_->p } @$subject_surfaces ],
-            [ map { ref $_ eq 'ARRAY' ? $_ : ref $_ eq 'Slic3r::ExPolygon' ? @$_ : $_->p } @$clip_surfaces ],
+            [ map { ref $_ eq 'ARRAY' ? $_ : ref $_ eq 'Slic3r::ExPolygon' ? $_->polygons : $_->p } @$subject_surfaces ],
+            [ map { ref $_ eq 'ARRAY' ? $_ : ref $_ eq 'Slic3r::ExPolygon' ? $_->polygons : $_->p } @$clip_surfaces ],
             1,
         );
         return grep $_->contour->is_printable($layer->flow->width),
@@ -295,7 +295,7 @@ sub detect_surfaces_type {
         foreach my $surface (@{$layer->slices}) {
             my $intersection = intersection_ex(
                 [ $surface->p ],
-                [ map @$_, @{$layer->fill_boundaries} ],
+                [ map $_->polygons, @{$layer->fill_boundaries} ],
             );
             push @{$layer->surfaces}, map Slic3r::Surface->new
                 (expolygon => $_, surface_type => $surface->surface_type),
@@ -348,13 +348,13 @@ sub discover_horizontal_shells {
                 # and new ones
                 my $internal_solid = union_ex([
                     ( map $_->p, grep $_->surface_type == S_TYPE_INTERNALSOLID, @neighbor_fill_surfaces ),
-                    ( map @$_, @$new_internal_solid ),
+                    ( map $_->polygons, @$new_internal_solid ),
                 ]);
                 
                 # subtract intersections from layer surfaces to get resulting inner surfaces
                 my $internal = diff_ex(
                     [ map $_->p, grep $_->surface_type == S_TYPE_INTERNAL, @neighbor_fill_surfaces ],
-                    [ map @$_, @$internal_solid ],
+                    [ map $_->polygons, @$internal_solid ],
                     1,
                 );
                 Slic3r::debugf "    %d internal-solid and %d internal surfaces found\n",
@@ -379,7 +379,7 @@ sub discover_horizontal_shells {
                 foreach my $s (Slic3r::Surface->group(grep { $_->surface_type == S_TYPE_TOP || $_->surface_type == S_TYPE_BOTTOM } @neighbor_fill_surfaces)) {
                     my $solid_surfaces = diff_ex(
                         [ map $_->p, @$s ],
-                        [ map @$_, @$internal_solid, @$internal ],
+                        [ map $_->polygons, @$internal_solid, @$internal ],
                         1,
                     );
                     push @$neighbor_fill_surfaces, Slic3r::Surface->new

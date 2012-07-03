@@ -230,7 +230,7 @@ sub export_gcode {
     
     # simplify slices, we only need the max resolution for perimeters
     $_->simplify(scale $Slic3r::resolution)
-        for map @{$_->expolygon}, map @{$_->slices}, map @{$_->layers}, @{$self->objects};
+        for map $_->expolygon->polygons, map @{$_->slices}, map @{$_->layers}, @{$self->objects};
     
     # this will clip $layer->surfaces to the infill boundaries 
     # and split them in top/bottom/internal surfaces;
@@ -434,7 +434,7 @@ sub make_skirt {
     foreach my $obj_idx (0 .. $#{$self->objects}) {
         my @layers = map $self->objects->[$obj_idx]->layer($_), 0..($skirt_height-1);
         my @layer_points = (
-            (map @$_, map @{$_->expolygon}, map @{$_->slices}, @layers),
+            (map @$_, map $_->expolygon->polygons, map @{$_->slices}, @layers),
             (map @$_, map @{$_->thin_walls}, @layers),
             (map @{$_->polyline->deserialize}, map @{$_->support_fills->paths}, grep $_->support_fills, @layers),
         );

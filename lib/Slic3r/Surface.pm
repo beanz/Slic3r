@@ -98,7 +98,7 @@ sub clipper_polygon {
 
 sub p {
     my $self = shift;
-    return @{$self->expolygon};
+    return $self->expolygon->contour, $self->expolygon->holes;
 }
 
 1;

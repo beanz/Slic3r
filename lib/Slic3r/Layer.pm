@@ -257,8 +257,8 @@ sub make_perimeters {
                     push @new_offsets, @offsets;
                     
                     my $diff = diff_ex(
-                        [ map @$_, $expolygon->offset_ex(-$distance) ],
-                        [ map @$_, @offsets ],
+                        [ map $_->polygons, $expolygon->offset_ex(-$distance) ],
+                        [ map $_->polygons, @offsets ],
                     );
                     push @gaps, grep $_->area >= $gap_area_threshold, @$diff;
                 }
@@ -392,7 +392,7 @@ sub prepare_fill_surfaces {
         }
         my $union = union_ex([
             (map $_->p, grep $_->surface_type == S_TYPE_TOP, @surfaces),
-            (map @$_, map $_->expolygon->safety_offset, @$small_internal),
+            (map $_->polygons, map $_->expolygon->safety_offset, @$small_internal),
         ]);
         my @top = map Slic3r::Surface->new(expolygon => $_, surface_type => S_TYPE_TOP), @$union;
         @surfaces = (grep($_->surface_type != S_TYPE_TOP, @surfaces), @top);
@@ -424,7 +424,7 @@ sub remove_small_surfaces {
         
         # offset the results outwards again and merge the results
         @offsets = map $_->offset_ex($distance), @offsets;
-        @offsets = @{ union_ex([ map @$_, @offsets ], undef, 1) };
+        @offsets = @{ union_ex([ map $_->polygons, @offsets ], undef, 1) };
         
         push @{$self->fill_surfaces}, map Slic3r::Surface->new(
             expolygon => $_,
@@ -561,7 +561,7 @@ sub process_bridges {
             
             # calculate the new bridge
             my $intersection = intersection_ex(
-                [ @$expolygon, map $_->p, @supporting_surfaces ],
+                [ $expolygon->polygons, map $_->p, @supporting_surfaces ],
                 [ $bridge_offset ],
             );
             
@@ -585,7 +585,7 @@ sub process_bridges {
         foreach my $surfaces (@surface_groups) {
             my $union = union_ex([ map $_->p, @$surfaces ]);
             my $diff = diff_ex(
-                [ map @$_, @$union ],
+                [ map $_->polygons, @$union ],
                 [ map $_->p, @bridges ],
             );
             

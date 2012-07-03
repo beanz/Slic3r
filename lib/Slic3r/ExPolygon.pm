@@ -16,12 +16,13 @@ sub new {
     my $class = shift;
     my $self;
     if (@_ == 1 && ref $_[0] eq 'HASH') {
-        $self = [
-            Slic3r::Polygon->new($_[0]{outer}),
-            map Slic3r::Polygon->new($_), @{$_[0]{holes}},
-        ];
+        $self = {
+            outer => Slic3r::Polygon->new($_[0]{outer}),
+            holes => [map Slic3r::Polygon->new($_), @{$_[0]{holes}}],
+        };
     } else {
-        $self = [ map Slic3r::Polygon->new($_), @_ ];
+        my @p = map Slic3r::Polygon->new($_), @_;
+        $self = { outer => shift @p, holes => \@p };
     }
     bless $self, $class;
     $self;
@@ -29,22 +30,27 @@ sub new {
 
 sub clone {
     my $self = shift;
-    return (ref $self)->new(map $_->clone, @$self);
+    return (ref $self)->new(map $_->clone, $self->polygons);
 }
 
 sub contour {
     my $self = shift;
-    return $self->[0];
+    return $self->{outer};
 }
 
 sub holes {
     my $self = shift;
-    return @$self[1..$#$self];
+    return @{$self->{holes}};
+}
+
+sub polygons {
+    my $self = shift;
+    return $self->contour, $self->holes;
 }
 
 sub lines {
     my $self = shift;
-    return map $_->lines, @$self;
+    return map $_->lines, $self->polygons;
 }
 
 sub clipper_expolygon {
@@ -57,7 +63,7 @@ sub clipper_expolygon {
 
 sub boost_polygon {
     my $self = shift;
-    return Boost::Geometry::Utils::polygon(@$self);
+    $self->{boost_poly} //= Boost::Geometry::Utils::polygon($self->polygons);
 }
 
 sub offset {
@@ -67,7 +73,7 @@ sub offset {
     $joinType   = JT_MITER if !defined $joinType;
     $miterLimit ||= 2;
     
-    my $offsets = Math::Clipper::offset($self, $distance, $scale, $joinType, $miterLimit);
+    my $offsets = Math::Clipper::offset([$self->polygons], $distance, $scale, $joinType, $miterLimit);
     return @$offsets;
 }
 
@@ -96,7 +102,7 @@ sub encloses_point {
     my $self = shift;
     my ($point) = @_;
     return point_in_polygon(point($point),
-                            polygon($self->contour, $self->holes));
+                            $self->boost_polygon);
 }
 
 # A version of encloses_point for use when hole borders do not matter.
@@ -117,7 +123,7 @@ sub encloses_line {
 sub point_on_segment {
     my $self = shift;
     my ($point) = @_;
-    for (@$self) {
+    for ($self->polygons) {
         my $line = $_->point_on_segment($point);
         return $line if $line;
     }
@@ -152,17 +158,17 @@ sub clip_line {
 
 sub simplify {
     my $self = shift;
-    $_->simplify(@_) for @$self;
+    $_->simplify(@_) for $self->polygons;
 }
 
 sub translate {
     my $self = shift;
-    $_->translate(@_) for @$self;
+    $_->translate(@_) for $self->polygons;
 }
 
 sub rotate {
     my $self = shift;
-    $_->rotate(@_) for @$self;
+    $_->rotate(@_) for $self->polygons;
 }
 
 sub area {
@@ -179,10 +185,10 @@ sub medial_axis {
     my $self = shift;
     my ($width) = @_;
     
-    my @self_lines = map $_->lines, @$self;
+    my @self_lines = map $_->lines, $self->polygons;
     my $expolygon = $self->clone;
     my @points = ();
-    foreach my $polygon (@$expolygon) {
+    foreach my $polygon ($expolygon->polygons) {
         Slic3r::Geometry::polyline_remove_short_segments($polygon, $width / 2);
         
         # subdivide polygon segments so that we don't have anyone of them

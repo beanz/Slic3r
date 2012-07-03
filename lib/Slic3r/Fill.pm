@@ -75,7 +75,7 @@ sub make_fill {
             # subtract surfaces having a defined bridge_angle from any other
             if (@surfaces_with_bridge_angle && !defined $group->[0]->bridge_angle) {
                 $union = diff_ex(
-                    [ map @$_, @$union ],
+                    [ map $_->polygons, @$union ],
                     [ map $_->p, @surfaces_with_bridge_angle ],
                     1,
                 );
@@ -83,7 +83,7 @@ sub make_fill {
             
             # subtract any other surface already processed
             $union = diff_ex(
-                [ map @$_, @$union ],
+                [ map $_->polygons, @$union ],
                 [ map $_->p, @surfaces ],
                 1,
             );
@@ -105,16 +105,16 @@ sub make_fill {
             my $expolygon = $surface->expolygon;
             my $diff = diff_ex(
                 [ $expolygon->offset($distance) ],
-                $expolygon,
+                [ $expolygon->polygons ],
                 1,
             );
-            push @offsets, map @$_, @$diff;
+            push @offsets, map $_->polygons, @$diff;
         }
         
         my @new_surfaces = ();
         foreach my $surface (@surfaces) {
             my $diff = diff_ex(
-                $surface->expolygon,
+                [ $surface->expolygon->polygons ],
                 [ @offsets ],
             );
             
