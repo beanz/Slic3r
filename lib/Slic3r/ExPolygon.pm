@@ -6,8 +6,9 @@ use warnings;
 
 use Boost::Geometry::Utils;
 use Math::Geometry::Voronoi;
-use Slic3r::Geometry qw(X Y A B point_in_polygon same_line);
+use Slic3r::Geometry qw(X Y A B same_line);
 use Slic3r::Geometry::Clipper qw(union_ex JT_MITER);
+use Boost::Geometry::Utils qw(polygon point point_in_polygon);
 
 # the constructor accepts an array of polygons 
 # or a Math::Clipper ExPolygon (hashref)
@@ -94,18 +95,15 @@ sub offset_ex {
 sub encloses_point {
     my $self = shift;
     my ($point) = @_;
-    return $self->contour->encloses_point($point)
-        && (!grep($_->encloses_point($point), $self->holes)
-            || grep($_->point_on_segment($point), $self->holes));
+    return point_in_polygon(point($point),
+                            polygon($self->contour, $self->holes));
 }
 
 # A version of encloses_point for use when hole borders do not matter.
 # Useful because point_on_segment is slow
 sub encloses_point_quick {
     my $self = shift;
-    my ($point) = @_;
-    return $self->contour->encloses_point($point)
-        && !grep($_->encloses_point($point), $self->holes);
+    $self->encloses_point(@_);
 }
 
 sub encloses_line {
