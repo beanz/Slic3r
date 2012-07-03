@@ -54,9 +54,9 @@ sub lines {
     return polyline_lines($self);
 }
 
-sub boost_linestring {
+sub boost_multilinestring {
     my $self = shift;
-    return Boost::Geometry::Utils::linestring($self);
+    return Boost::Geometry::Utils::multilinestring($self);
 }
 
 sub merge_continuous_lines {
@@ -126,7 +126,7 @@ sub clip_with_expolygon {
     
     my $result = Boost::Geometry::Utils::polygon_linestring_intersection(
         $expolygon->boost_polygon,
-        $self->boost_linestring,
+        $self->boost_multilinestring,
     );
     bless $_, 'Slic3r::Polyline' for @$result;
     bless $_, 'Slic3r::Point' for map @$_, @$result;

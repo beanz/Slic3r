@@ -152,7 +152,7 @@ sub clip_line {
     
     return Boost::Geometry::Utils::polygon_linestring_intersection(
         $self->boost_polygon,
-        $line->boost_linestring,
+        $line->boost_multilinestring,
     );
 }
 

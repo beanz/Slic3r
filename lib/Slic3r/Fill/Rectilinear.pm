@@ -48,7 +48,7 @@ sub fill_surface {
     }
     my @paths = @{ Boost::Geometry::Utils::polygon_linestring_intersection(
         $expolygon_epsilon_off->boost_polygon,
-        Boost::Geometry::Utils::linestring(@vertical_lines),
+        Boost::Geometry::Utils::multilinestring(@vertical_lines),
     ) };
     for (@paths) {
         $_->[0][Y] += $overlap_distance;

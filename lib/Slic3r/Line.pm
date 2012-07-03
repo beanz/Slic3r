@@ -32,9 +32,9 @@ sub coordinates {
     return ($self->a->coordinates, $self->b->coordinates);
 }
 
-sub boost_linestring {
+sub boost_multilinestring {
     my $self = shift;
-    return Boost::Geometry::Utils::linestring($self);
+    return Boost::Geometry::Utils::multilinestring($self);
 }
 
 sub coincides_with {
