@@ -137,7 +137,7 @@ sub slice {
             map $_->expolygon->contour, @upper_surfaces, @lower_surfaces,
         ]);
         my $diff = diff_ex(
-            [ map @$_, @$union ],
+            [ map $_->polygons, @$union ],
             [ map $_->expolygon->holes, @upper_surfaces, @lower_surfaces, ],
         );
         
