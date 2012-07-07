@@ -94,9 +94,8 @@ sub offset_ex {
 sub encloses_point {
     my $self = shift;
     my ($point) = @_;
-    return $self->contour->encloses_point($point)
-        && (!grep($_->encloses_point($point), $self->holes)
-            || grep($_->point_on_segment($point), $self->holes));
+    # TODO: should use covered_by
+    return Boost::Geometry::Utils::point_within_polygon($point, $self);
 }
 
 # A version of encloses_point for use when hole borders do not matter.
@@ -104,8 +103,7 @@ sub encloses_point {
 sub encloses_point_quick {
     my $self = shift;
     my ($point) = @_;
-    return $self->contour->encloses_point($point)
-        && !grep($_->encloses_point($point), $self->holes);
+    return Boost::Geometry::Utils::point_within_polygon($point, $self);
 }
 
 sub encloses_line {
@@ -146,9 +144,9 @@ sub clip_line {
     my $self = shift;
     my ($line) = @_;  # line must be a Slic3r::Line object
     
-    return Boost::Geometry::Utils::polygon_linestring_intersection(
-        $self->boost_polygon,
-        $line->boost_linestring,
+    return Boost::Geometry::Utils::polygon_multi_linestring_intersection(
+        $self,
+        [$line]
     );
 }
 

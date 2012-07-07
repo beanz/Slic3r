@@ -54,6 +54,11 @@ sub lines {
     return polyline_lines($self);
 }
 
+sub linestring {
+    my $self = shift;
+    $self;
+}
+
 sub boost_linestring {
     my $self = shift;
     return Boost::Geometry::Utils::linestring($self);

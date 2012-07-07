@@ -14,6 +14,11 @@ sub lines {
     return polygon_lines($self);
 }
 
+sub linestring {
+    my $self = shift;
+    [@$self, $self->[0]];
+}
+
 sub boost_linestring {
     my $self = shift;
     return Boost::Geometry::Utils::linestring([@$self, $self->[0]]);
