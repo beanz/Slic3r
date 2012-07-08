@@ -21,7 +21,7 @@ our @EXPORT_OK = qw(
     rad2deg_dir bounding_box_center line_intersects_any douglas_peucker
     polyline_remove_short_segments normal triangle_normal polygon_is_convex
 );
-
+use Boost::Geometry::Utils;
 
 use constant PI => 4 * atan2(1, 1);
 use constant A => 0;
@@ -787,28 +787,7 @@ sub shortest_path {
 
 sub douglas_peucker {
     my ($points, $tolerance) = @_;
-    no warnings "recursion";
-    
-    my $results = [];
-    my $dmax = 0;
-    my $index = 0;
-    for my $i (1..$#$points) {
-        my $d = point_line_distance($points->[$i], [ $points->[0], $points->[-1] ]);
-        if ($d > $dmax) {
-            $index = $i;
-            $dmax = $d;
-        }
-    }
-    if ($dmax >= $tolerance) {
-        my $dp1 = douglas_peucker([ @$points[0..$index] ], $tolerance);
-        $results = [
-            @$dp1[0..($#$dp1-1)],
-            @{douglas_peucker([ @$points[$index..$#$points] ], $tolerance)},
-        ];
-    } else {
-        $results = [ $points->[0], $points->[-1] ];
-    }
-    return $results;
+    return Boost::Geometry::Utils::linestring_simplify($points, $tolerance);
 }
 
 sub douglas_peucker2 {
