@@ -94,8 +94,7 @@ sub offset_ex {
 sub encloses_point {
     my $self = shift;
     my ($point) = @_;
-    # TODO: should use covered_by
-    return Boost::Geometry::Utils::point_within_polygon($point, $self);
+    return Boost::Geometry::Utils::point_covered_by_polygon($point, $self);
 }
 
 # A version of encloses_point for use when hole borders do not matter.
